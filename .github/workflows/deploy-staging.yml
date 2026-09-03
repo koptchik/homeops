@@ -26,11 +26,38 @@ jobs:
         run: |
           docker build -t homeops-staging:${{ github.sha }} .
 
-      - name: Stop old container
+      - name: Cleanup stale temporary container
         run: |
-          docker rm -f homeops-staging || true
+          docker rm -f homeops-staging-new || true
 
-      - name: Start staging container
+      - name: Start test staging container
+        run: |
+          docker run -d \
+            --name homeops-staging-new \
+            -p 8001:8000 \
+            homeops-staging:${{ github.sha }}
+
+      - name: Health check test container
+        id: test_health
+        run: |
+          sleep 3
+          curl --fail http://127.0.0.1:8001/healths
+
+      - name: Show failed test container logs
+        if: failure() && steps.test_health.outcome == 'failure'
+        run: |
+          docker logs homeops-staging-new || true
+
+      - name: Prepare old staging container
+        if: steps.test_health.outcome == 'success'
+        run: |
+          docker rm -f homeops-staging-old || true
+          docker rename homeops-staging homeops-staging-old
+          docker stop homeops-staging-old
+
+      - name: Start promoted staging container
+        id: promote
+        if: steps.test_health.outcome == 'success'
         run: |
           docker run -d \
             --name homeops-staging \
@@ -38,7 +65,27 @@ jobs:
             -p 8000:8000 \
             homeops-staging:${{ github.sha }}
 
-      - name: Health check
+      - name: Health check promoted container
+        id: promoted_health
+        if: steps.promote.outcome == 'success'
         run: |
           sleep 3
           curl --fail http://127.0.0.1:8000/health
+
+      - name: Cleanup old staging container
+        if: steps.promoted_health.outcome == 'success'
+        run: |
+          docker rm homeops-staging-old
+
+      - name: Rollback staging
+        if: failure() && steps.test_health.outcome == 'success'
+        run: |
+          docker logs homeops-staging || true
+          docker rm -f homeops-staging || true
+          docker start homeops-staging-old
+          docker rename homeops-staging-old homeops-staging
+
+      - name: Cleanup temporary container
+        if: always()
+        run: |
+          docker rm -f homeops-staging-new || true
