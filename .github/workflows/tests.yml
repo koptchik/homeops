@@ -22,20 +22,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Python versoin
+      - name: Show Python version
         run:  |
           python3 --version
           command -v python3
 
-      - name: Create virtual enviroment
+      - name: Create virtual environment
         run:  |
           python3 -m venv .venv-ci
 
       - name: Install dependencies
         run:  |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements-dev.txt
+          .venv-ci/bin/python -m pip install --upgrade pip
+          .venv-ci/bin/python -m pip install -r requirements-dev.txt
 
       - name: Run tests
         run:  |
-          python -m pytest -v  
+          .venv-ci/bin/python -m pytest -v  
