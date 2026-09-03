@@ -22,20 +22,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Python version
+      - name: Show Docker version
         run:  |
-          python3 --version
-          command -v python3
+          docker --version
 
-      - name: Create virtual environment
+      - name: Build test image
         run:  |
-          python3 -m venv .venv-ci
+          docker build -f Dockerfile.test -t homeops-test:${{ github.sha }} .
 
-      - name: Install dependencies
+      - name: Run tests in container
         run:  |
-          .venv-ci/bin/python -m pip install --upgrade pip
-          .venv-ci/bin/python -m pip install -r requirements-dev.txt
-
-      - name: Run tests
-        run:  |
-          .venv-ci/bin/python -m pytest -v  
+          docker run --rm homeops-test:${{ github.sha }}  
