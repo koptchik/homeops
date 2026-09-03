@@ -25,7 +25,7 @@ jobs:
       - name: Show Python versoin
         run:  |
           python3 --version
-          wich pithon3
+          which pithon3
 
       - name: Create virtual enviroment
         run:  |
