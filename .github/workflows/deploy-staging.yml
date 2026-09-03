@@ -1,0 +1,44 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - homeops
+      - staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker version
+        run: |
+          docker --version
+
+      - name: Build staging image
+        run: |
+          docker build -t homeops-staging:${{ github.sha }} .
+
+      - name: Stop old container
+        run: |
+          docker rm -f homeops-staging || true
+
+      - name: Start staging container
+        run: |
+          docker run -d \
+            --name homeops-staging \
+            --restart unless-stopped \
+            -p 8000:8000 \
+            homeops-staging:${{ github.sha }}
+
+      - name: Health check
+        run: |
+          sleep 3
+          curl --fail http://127.0.0.1:8000/docs
