@@ -32,4 +32,9 @@ jobs:
 
       - name: Run tests in container
         run:  |
-          docker run --rm homeops-test:${{ github.sha }}  
+          docker run --rm homeops-test:${{ github.sha }} 
+
+      - name: Cleanup test image
+        if: always()
+        run:  |
+          docker image rm homeops-test:${{ github.sha }} || true
