@@ -14,10 +14,62 @@ def test_create_service():
             "check_interval": 75
         }
     )
-    resp = response.json()
+    data = response.json()
     assert response.status_code == 200
-    assert resp["name"] == "test"
-    assert resp["url"].startswith("http://exemple.com:1234")
-    assert resp["check_interval"] == 75
-    assert "id" in resp
-     
+    assert data["name"] == "test"
+    assert data["url"].startswith("http://exemple.com:1234")
+    assert data["check_interval"] == 75
+    assert "id" in data
+
+def test_get_services():
+    response = client.post(
+        "/services",
+        json={
+            "name": "service-one",
+            "url": "https://example.com",
+            "check_interval": 60,
+        },
+    )
+
+    created = response.json()
+
+    response = client.get("/services")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert created in data
+
+def test_get_service():
+    create_response = client.post(
+        "/services",
+        json={
+            "name": "test-service",
+            "url": "https://example.com",
+            "check_interval": 60,
+        },
+    )
+
+    created = create_response.json()
+    service_id = created["id"]
+
+    response = client.get(f"/services/{service_id}")
+
+    assert response.status_code == 200
+    assert response.json() == created
+
+def test_delete_service():
+    create_response = client.post(
+        "/services",
+        json={
+            "name": "delete-me",
+            "url": "https://example.com",
+            "check_interval": 60,
+        },
+    )
+
+    created = create_response.json()
+
+    response = client.delete(f"/services/{created['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == created
