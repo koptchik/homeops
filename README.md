@@ -13,3 +13,5 @@ HomeOps is a small self-hosted dashboard for monitoring services in a home infra
 - Proxmox LXC
 - Prometheus
 - Grafana
+
+Branch protection test.
