@@ -63,7 +63,7 @@ jobs:
             --name homeops-staging \
             --restart unless-stopped \
             -p 8000:8000 \
-            homeops--staging:${{ github.sha }}
+            homeops-staging:${{ github.sha }}
 
       - name: Health check promoted container
         id: promoted_health
