@@ -41,7 +41,7 @@ jobs:
         id: test_health
         run: |
           sleep 3
-          curl --fail http://127.0.0.1:8001/healths
+          curl --fail http://127.0.0.1:8001/health
 
       - name: Show failed test container logs
         if: failure() && steps.test_health.outcome == 'failure'
@@ -63,7 +63,7 @@ jobs:
             --name homeops-staging \
             --restart unless-stopped \
             -p 8000:8000 \
-            homeops-staging:${{ github.sha }}
+            homeops--staging:${{ github.sha }}
 
       - name: Health check promoted container
         id: promoted_health
