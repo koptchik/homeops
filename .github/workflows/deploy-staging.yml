@@ -77,8 +77,14 @@ jobs:
         run: |
           docker rm homeops-staging-old
 
-      - name: Rollback staging
+      - name: Check homeops-staging-old
+        id: check_old
         if: failure() && steps.test_health.outcome == 'success'
+        run: |
+          docker container inspect homeops-staging-old --format '{{.Image}}'
+
+      - name: Rollback staging
+        if: failure() && steps.test_health.outcome == 'success' && steps.check_old.outcome == 'success'
         run: |
           docker logs homeops-staging || true
           docker rm -f homeops-staging || true
