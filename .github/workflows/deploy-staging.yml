@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: homeops-staging-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on:
@@ -96,24 +100,107 @@ jobs:
         run: |
           docker rm -f homeops-staging-new || true
 
-      - name: Show staging image cleanup candidates
-        if: success()
+      - name: Cleanup staging images
+        id: cleanup_images
         shell: bash
+        env:
+          DRY_RUN: 'true'
+          LC_ALL: C
         run: |
+          set -euo pipefail
+
+          CANDIDATES=$(
+            docker image ls homeops-staging --no-trunc --format '{{.ID}}' |
+              sort -u |
+              xargs -r docker image inspect --format '{{.Id}} {{.Created}}' |
+              sort -k2,2r |
+              tail -n +3 |
+              awk '{print $1}' |
+              sort -u
+          ) || {
+            printf '%s\n' 'ERROR: Failed to collect image cleanup candidates' >&2
+            exit 1
+          }
+
+          USED=$(
+            docker container ls -aq |
+              xargs -r docker container inspect --format '{{.Image}}' |
+              sort -u
+          ) || {
+            printf '%s\n' 'ERROR: Failed to collect images used by containers' >&2
+            exit 1
+          }
+
           IMAGES=$(comm -23 \
-              <(
-                docker image ls homeops-staging --no-trunc --format '{{.ID}}' |
-                  sort -u |
-                  xargs -r docker image inspect --format '{{.Id}} {{.Created}}' |
-                  sort -k2,2r |
-                  tail -n +3 |
-                  awk '{print $1}' |
-                  sort -u
-              ) \
-              <(
-                docker container ls -aq |
-                  xargs -r docker container inspect --format '{{.Image}}' |
-                  sort -u
-              )
+              <(printf '%s\n' "$CANDIDATES") \
+              <(printf '%s\n' "$USED")
             )
-          printf '%s\n' "$IMAGES"
+          
+          if [[ -z "$IMAGES" ]]; then
+            printf '%s\n' 'No staging image cleanup candidates'
+            exit 0
+          fi
+
+          while IFS= read -r IMAGE; do
+            [[ -n "$IMAGE" ]] || continue
+
+            TAG_TEXT=$(
+              docker image inspect "$IMAGE" \
+                --format '{{range .RepoTags}}{{println .}}{{end}}'
+            )
+            DIGESTS=$(
+              docker image inspect "$IMAGE" \
+                --format '{{json .RepoDigests}}'
+            )
+
+            if [[ -z "$TAG_TEXT" || "$DIGESTS" != '[]' ]]; then
+              printf 'Skip %s: no tags or registry references present\n' "$IMAGE"
+              continue
+            fi
+
+            mapfile -t TAGS <<< "$TAG_TEXT"
+            FOREIGN=false
+
+            for TAG in "${TAGS[@]}"; do
+              if [[ "$TAG" != homeops-staging:* ]]; then
+                FOREIGN=true
+                break
+              fi
+            done
+
+            if [[ "$FOREIGN" == true ]]; then
+              printf 'Skip %s: references outside homeops-staging\n' "$IMAGE"
+              continue
+            fi
+
+            for TAG in "${TAGS[@]}"; do
+              CURRENT_ID=$(docker image inspect "$TAG" --format '{{.Id}}')
+              if [[ "$CURRENT_ID" != "$IMAGE" ]]; then
+                printf 'ERROR: Tag changed during cleanup: %s\n' "$TAG" >&2
+                exit 1
+              fi
+            done
+
+            USED_NOW=$(
+              docker container ls -aq |
+                xargs -r docker container inspect --format '{{.Image}}' |
+                sort -u
+            ) || {
+              printf '%s\n' 'ERROR: Failed to recheck container images' >&2
+              exit 1
+            }
+
+            if grep -Fxq "$IMAGE" <<< "$USED_NOW"; then
+              printf 'Skip %s: image is now used by a container\n' "$IMAGE"
+              continue
+            fi
+
+            printf 'Selected image: %s\n' "$IMAGE"
+            printf '  Tag: %s\n' "${TAGS[@]}"
+
+            if [[ "$DRY_RUN" == 'false' ]]; then
+              docker image rm "${TAGS[@]}"
+            else
+              printf '%s\n' 'DRY RUN: nothing deleted'
+            fi
+          done < <(printf '%s\n' "$IMAGES")
