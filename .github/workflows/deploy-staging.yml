@@ -77,8 +77,14 @@ jobs:
         run: |
           docker rm homeops-staging-old
 
-      - name: Rollback staging
+      - name: Check homeops-staging-old
+        id: check_old
         if: failure() && steps.test_health.outcome == 'success'
+        run: |
+          docker container inspect homeops-staging-old --format '{{.Image}}'
+
+      - name: Rollback staging
+        if: failure() && steps.test_health.outcome == 'success' && steps.check_old.outcome == 'success'
         run: |
           docker logs homeops-staging || true
           docker rm -f homeops-staging || true
@@ -89,3 +95,25 @@ jobs:
         if: always()
         run: |
           docker rm -f homeops-staging-new || true
+
+      - name: Show staging image cleanup candidates
+        if: success()
+        shell: bash
+        run: |
+          IMAGES=$(comm -23 \
+              <(
+                docker image ls homeops-staging --no-trunc --format '{{.ID}}' |
+                  sort -u |
+                  xargs -r docker image inspect --format '{{.Id}} {{.Created}}' |
+                  sort -k2,2r |
+                  tail -n +3 |
+                  awk '{print $1}' |
+                  sort -u
+              ) \
+              <(
+                docker container ls -aq |
+                  xargs -r docker container inspect --format '{{.Image}}' |
+                  sort -u
+              )
+            )
+          printf '%s\n' "$IMAGES"
