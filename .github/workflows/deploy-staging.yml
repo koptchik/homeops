@@ -1,16 +1,51 @@
-name: Deploy Staging
+name: HomeOps CI/CD
 
 on:
   push:
     branches:
       - main
-
-concurrency:
-  group: homeops-staging-deploy
-  cancel-in-progress: false
+  pull_request:
+    branches:
+      - main
 
 jobs:
+  tests:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - homeops
+      - lxc
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker version
+        run: |
+          docker --version
+
+      - name: Build test image
+        run: |
+          docker build -f Dockerfile.test -t homeops-test:${{ github.sha }} .
+
+      - name: Run tests in container
+        run: |
+          docker run --rm homeops-test:${{ github.sha }}
+
+      - name: Cleanup test image
+        if: always()
+        run: |
+          docker image rm homeops-test:${{ github.sha }} || true
+
   deploy:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    concurrency:
+      group: homeops-staging-deploy
+      cancel-in-progress: false
+
     runs-on:
       - self-hosted
       - Linux
