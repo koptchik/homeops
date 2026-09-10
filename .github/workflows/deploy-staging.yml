@@ -104,7 +104,7 @@ jobs:
         id: cleanup_images
         shell: bash
         env:
-          DRY_RUN: 'true'
+          DRY_RUN: 'false'
           LC_ALL: C
         run: |
           set -euo pipefail
@@ -135,7 +135,7 @@ jobs:
               <(printf '%s\n' "$CANDIDATES") \
               <(printf '%s\n' "$USED")
             )
-          
+
           if [[ -z "$IMAGES" ]]; then
             printf '%s\n' 'No staging image cleanup candidates'
             exit 0
