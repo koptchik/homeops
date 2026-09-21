@@ -88,6 +88,10 @@ jobs:
       - homeops
       - staging
 
+    env:
+      INAME: homeops
+      IMAGE: ghcr.io/koptchik/"$INAME":${{ github.sha }}
+  
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -96,9 +100,16 @@ jobs:
         run: |
           docker --version
 
-      - name: Build staging image
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} 
+
+      - name: Pull staging image
         run: |
-          docker build -t homeops-staging:${{ github.sha }} .
+          docker pull "$IMAGE"
 
       - name: Cleanup stale temporary container
         run: |
@@ -109,7 +120,7 @@ jobs:
           docker run -d \
             --name homeops-staging-new \
             -p 8001:8000 \
-            homeops-staging:${{ github.sha }}
+            "$INAME":${{ github.sha }}
 
       - name: Health check test container
         id: test_health
@@ -137,7 +148,7 @@ jobs:
             --name homeops-staging \
             --restart unless-stopped \
             -p 8000:8000 \
-            homeops-staging:${{ github.sha }}
+            "$INAME":${{ github.sha }}
 
       - name: Health check promoted container
         id: promoted_health
