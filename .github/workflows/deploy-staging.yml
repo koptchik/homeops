@@ -74,7 +74,7 @@ jobs:
           docker push "$IMAGE"
 
   deploy:
-    needs: tests
+    needs: publish
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     concurrency:
@@ -88,9 +88,13 @@ jobs:
       - homeops
       - staging
 
+    permissions:
+      contents: read
+      packages: read
+
     env:
       INAME: homeops
-      IMAGE: ghcr.io/koptchik/"$INAME":${{ github.sha }}
+      IMAGE: ghcr.io/koptchik/homeops:${{ github.sha }}
   
     steps:
       - name: Checkout repository
