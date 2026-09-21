@@ -71,7 +71,7 @@ jobs:
       
       - name: Push image
         run: |
-          docker push "$IMAGE"
+          docker push "$IMAGE" .
 
   deploy:
     needs: tests
