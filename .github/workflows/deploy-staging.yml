@@ -93,7 +93,6 @@ jobs:
       packages: read
 
     env:
-      INAME: homeops
       IMAGE: ghcr.io/koptchik/homeops:${{ github.sha }}
   
     steps:
@@ -124,7 +123,7 @@ jobs:
           docker run -d \
             --name homeops-staging-new \
             -p 8001:8000 \
-            "$INAME":${{ github.sha }}
+            "$IMAGE"
 
       - name: Health check test container
         id: test_health
@@ -152,7 +151,7 @@ jobs:
             --name homeops-staging \
             --restart unless-stopped \
             -p 8000:8000 \
-            "$INAME":${{ github.sha }}
+            "$IMAGE"
 
       - name: Health check promoted container
         id: promoted_health
