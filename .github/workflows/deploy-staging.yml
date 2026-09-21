@@ -241,7 +241,7 @@ jobs:
             )
 
             if [[ -z "$TAG_TEXT" ]]; then
-              printf 'Skip %s: no tags' "$IMAGE"
+              printf 'Skip %s: no tags\n' "$IMAGE"
               continue
             fi
 
@@ -250,7 +250,7 @@ jobs:
 
             for TAG in "${TAGS[@]}"; do
               case "$TAG" in
-                homeops-stahing:*|ghcr.io/koptchik/homeops:*)
+                homeops-staging:*|ghcr.io/koptchik/homeops:*)
                 ;;
               *)
                 FOREIGN=true
@@ -268,7 +268,7 @@ jobs:
                 break
                 ;;
               esac
-            done
+            done <<< "$DIGEST_TEXT"
               
             if [[ "$FOREIGN" == true ]]; then
               printf 'Skip %s: references outside managed repositories\n' "$IMAGE"
