@@ -188,7 +188,7 @@ jobs:
         id: cleanup_images
         shell: bash
         env:
-          DRY_RUN: 'true'
+          DRY_RUN: 'false'
           LC_ALL: C
         run: |
           set -euo pipefail
