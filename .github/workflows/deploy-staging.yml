@@ -67,11 +67,11 @@ jobs:
           docker build \
             --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
             --label "org.opencontainers.image.revision=${{ github.sha }}" \
-            -t "$IMAGE"
+            -t "$IMAGE" .
       
       - name: Push image
         run: |
-          docker push "$IMAGE" .
+          docker push "$IMAGE"
 
   deploy:
     needs: tests
