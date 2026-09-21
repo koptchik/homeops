@@ -38,6 +38,41 @@ jobs:
         run: |
           docker image rm homeops-test:${{ github.sha }} || true
 
+  publish:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/koptchik/homeops:${{ github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          docker build \
+            --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            -t "$IMAGE" .
+      
+      - name: Push image
+        run: |
+          docker push "$IMAGE"
+
   deploy:
     needs: tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
