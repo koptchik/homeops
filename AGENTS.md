@@ -4,7 +4,7 @@ HomeOps — рабочий учебный DevOps pet-проект на FastAPI �
 
 ## Цели
 
-Цель — за двухнедельный учебный цикл собрать работающий DevOps pet-проект с понятным pipeline:
+Цель — собрать работающий DevOps pet-проект с понятным pipeline без фиксированного срока завершения:
 
 ```text
 VS Code → Git → GitHub → CI/tests → Docker build → registry
