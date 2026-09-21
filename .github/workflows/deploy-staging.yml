@@ -188,13 +188,16 @@ jobs:
         id: cleanup_images
         shell: bash
         env:
-          DRY_RUN: 'false'
+          DRY_RUN: 'true'
           LC_ALL: C
         run: |
           set -euo pipefail
 
           CANDIDATES=$(
-            docker image ls homeops-staging --no-trunc --format '{{.ID}}' |
+            docker image ls --no-trunc \
+              --filter 'reference=homeops-staging:*' \
+              --filter 'reference=ghcr.io/koptchik/homeops:*' \
+              --format '{{.ID}}' |
               sort -u |
               xargs -r docker image inspect --format '{{.Id}} {{.Created}}' |
               sort -k2,2r |
@@ -232,13 +235,13 @@ jobs:
               docker image inspect "$IMAGE" \
                 --format '{{range .RepoTags}}{{println .}}{{end}}'
             )
-            DIGESTS=$(
+            DIGEST_TEXT=$(
               docker image inspect "$IMAGE" \
-                --format '{{json .RepoDigests}}'
+                --format '{{range .RepoDigests}}{{println .}}{{end}}'
             )
 
-            if [[ -z "$TAG_TEXT" || "$DIGESTS" != '[]' ]]; then
-              printf 'Skip %s: no tags or registry references present\n' "$IMAGE"
+            if [[ -z "$TAG_TEXT" ]]; then
+              printf 'Skip %s: no tags' "$IMAGE"
               continue
             fi
 
@@ -246,14 +249,29 @@ jobs:
             FOREIGN=false
 
             for TAG in "${TAGS[@]}"; do
-              if [[ "$TAG" != homeops-staging:* ]]; then
+              case "$TAG" in
+                homeops-stahing:*|ghcr.io/koptchik/homeops:*)
+                ;;
+              *)
                 FOREIGN=true
                 break
-              fi
+                ;;
+              esac
             done
 
+            while IFS= read -r DIGEST; do
+              [[ -n "$DIGEST" ]] || continue
+               case "$DIGEST" in ghcr.io/koptchik/homeops@sha256:*)
+                ;;
+              *)
+                FOREIGN=true
+                break
+                ;;
+              esac
+            done
+              
             if [[ "$FOREIGN" == true ]]; then
-              printf 'Skip %s: references outside homeops-staging\n' "$IMAGE"
+              printf 'Skip %s: references outside managed repositories\n' "$IMAGE"
               continue
             fi
 
