@@ -14,3 +14,6 @@ __pycache__
 node_modules
 dist
 README.md
+
+AGENTS.md
+agents-rules/
