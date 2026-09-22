@@ -208,10 +208,14 @@ jobs:
           curl --fail http://127.0.0.1:8000/health
 
       - name: Show failed container logs after Rollback
-        if: failure() && steps.rollback_health.outcome == 'failure'
+        if: >-
+          failure() &&
+          (steps.rollback_health.outcome == 'failure' ||
+          steps.rollback.outcome == 'failure')
         run: |
-          printf '%s\n' 'ERROR: Failed to start container after Rollback' >&2
-          docker logs homeops-staging || true
+          printf '%s\n' 'ERROR: Rollback or post-rollback health check failed' >&2
+          docker logs --tail 50 homeops-staging || true
+          docker logs --tail 50 homeops-staging-old || true
 
       - name: Cleanup temporary container
         if: always()
