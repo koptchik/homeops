@@ -172,12 +172,26 @@ jobs:
           docker container inspect homeops-staging-old --format '{{.Image}}'
 
       - name: Rollback staging
+        id: rollback
         if: failure() && steps.test_health.outcome == 'success' && steps.check_old.outcome == 'success'
         run: |
           docker logs homeops-staging || true
           docker rm -f homeops-staging || true
           docker start homeops-staging-old
           docker rename homeops-staging-old homeops-staging
+
+      - name: Health check old container after Rollback
+        id: rollback_health
+        if: failure() && steps.rollback.outcome == 'success'
+        run: |
+          sleep 3
+          curl --fail http://127.0.0.1:8000/health
+
+      - name: Show failed container logs after Rollback
+        if: failure() && steps.rollback_health.outcome == 'failure'
+        run: |
+          printf '%s\n' 'ERROR: Failed to start container after Rollback' >&2
+          docker logs homeops-staging || true
 
       - name: Cleanup temporary container
         if: always()
