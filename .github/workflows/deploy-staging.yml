@@ -187,13 +187,20 @@ jobs:
           sleep 3
           curl --fail http://127.0.0.1:8000/health
 
+      - name: Show failed container logs after Rollback
+        if: failure() && steps.test_health.outcome == 'failure'
+        run: |
+          printf '%s\n' 'ERROR: Failed to start container after Rollback' >&2
+          docker logs homeops-staging-new || true    
+
       - name: Cleanup temporary container
-        if: always()
+        if: failure() && steps.rollback_health.outcome == 'success'
         run: |
           docker rm -f homeops-staging-new || true
 
       - name: Cleanup staging images
         id: cleanup_images
+        if: failure() && steps.rollback_health.outcome == 'success'
         shell: bash
         env:
           DRY_RUN: 'false'
