@@ -47,7 +47,7 @@ jobs:
 
   publish:
     needs: tests
-    if: >_
+    if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch')
@@ -85,7 +85,7 @@ jobs:
 
   deploy:
     needs: publish
-    if: >_
+    if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch')
@@ -172,8 +172,8 @@ jobs:
         env:
           SIMULATE_FAILURE: ${{ github.event_name == 'workflow_dispatch' && inputs.simulate_failure }}
         run: |
-          if [[ "SIMULATE_FAILURE" == 'true' ]]; then
-            printf '%\n' 'Simulated failure: testing staging rollback' >&2
+          if [[ "$SIMULATE_FAILURE" == 'true' ]]; then
+            printf '%s\n' 'Simulated failure: testing staging rollback' >&2
             exit 1
           fi
 
