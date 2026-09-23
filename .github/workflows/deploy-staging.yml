@@ -166,6 +166,12 @@ jobs:
             -p 8000:8000 \
             "$IMAGE"
 
+      - name: Check promoting staging container
+        if: failure() && steps.promote.conclusion == 'failure'
+        run: |
+          printf '%s\n' 'Deploy failure'
+          docker logs homeops-staging || true
+
       - name: Health check promoted container
         id: promoted_health
         if: steps.promote.outcome == 'success'
@@ -187,14 +193,26 @@ jobs:
 
       - name: Check homeops-staging-old
         id: check_old
-        if: failure() && steps.test_health.outcome == 'success'
+        if: >-
+          failure() &&
+          steps.test_health.outcome == 'success' &&
+          steps.promoted_health.outcome != 'success'
         run: |
           docker container inspect homeops-staging-old --format '{{.Image}}'
 
       - name: Rollback staging
         id: rollback
-        if: failure() && steps.test_health.outcome == 'success' && steps.check_old.outcome == 'success'
+        if: >-
+          failure() &&
+          steps.promoted_health.outcome != 'success' &&
+          steps.check_old.outcome == 'success' &&
+          steps.promote.outcome != 'success'
         run: |
+          if [ "${{ steps.promoted_health.conclusion }}" = "skipped" ]; then
+            printf '%s\n' 'Deploy failure: start rollback' >&2
+          else
+            printf '%s\n' 'Post-Deploy failure: start rollback' >&2
+          fi
           docker logs homeops-staging || true
           docker rm -f homeops-staging || true
           docker start homeops-staging-old
