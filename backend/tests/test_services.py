@@ -73,3 +73,13 @@ def test_delete_service():
 
     assert response.status_code == 200
     assert response.json() == created
+
+def test_get_service_999999():
+    response = client.get(f"/services/999999")
+
+    assert response.status_code == 404
+
+def test_delete_service_999999():
+    response = client.delete(f"/services/999999")
+
+    assert response.status_code == 404
