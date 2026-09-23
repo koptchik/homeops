@@ -75,33 +75,11 @@ def test_delete_service():
     assert response.json() == created
 
 def test_get_service_999999():
-    create_response = client.post(
-        "/services",
-        json={
-            "name": "test-service",
-            "url": "https://example.com",
-            "check_interval": 60,
-        },
-    )
-
-    created = create_response.json()
-
     response = client.get(f"/services/999999")
 
     assert response.status_code == 404
 
 def test_delete_service_999999():
-    create_response = client.post(
-        "/services",
-        json={
-            "name": "test-service",
-            "url": "https://example.com",
-            "check_interval": 60,
-        },
-    )
-
-    created = create_response.json()
-
     response = client.delete(f"/services/999999")
 
     assert response.status_code == 404
