@@ -204,9 +204,9 @@ jobs:
         id: rollback
         if: >-
           failure() &&
+          steps.test_health.outcome == 'success' &&
           steps.promoted_health.outcome != 'success' &&
-          steps.check_old.outcome == 'success' &&
-          steps.promote.outcome != 'success'
+          steps.check_old.outcome == 'success'
         run: |
           if [ "${{ steps.promoted_health.conclusion }}" = "skipped" ]; then
             printf '%s\n' 'Deploy failure: start rollback' >&2
