@@ -75,11 +75,57 @@ def test_delete_service():
     assert response.json() == created
 
 def test_get_service_999999():
-    response = client.get(f"/services/999999")
+    response = client.get("/services/999999")
 
     assert response.status_code == 404
 
 def test_delete_service_999999():
-    response = client.delete(f"/services/999999")
+    response = client.delete("/services/999999")
 
     assert response.status_code == 404
+
+def test_service_name_lenht():
+    lenghts = [1,2,50,51]
+    for lenght in lenghts:
+        result = "a" * lenght
+        response = client.post(
+            "/services",
+            json={
+                "name": result,
+                "url": "http://exemple.com:1234",
+                "check_interval": 60
+            }
+        )
+        if 2 <= lenght <= 50:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 422
+
+def test_service_check_interval():
+    intervals = [9,10,3600,3601]
+    for interval in intervals:
+        response = client.post(
+            "/services",
+            json={
+                "name": "test",
+                "url": "http://exemple.com:1234",
+                "check_interval": interval
+            }
+        )
+        if 10 <= interval <= 3600:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 422
+
+def test_service_url():
+    case = [("http://exemple.com:1234", 200),("exemple com", 422)]
+    for url, expected_status in case:
+        response = client.post(
+            "/services",
+            json={
+                "name": "test",
+                "url": url,
+                "check_interval": 60
+            }
+        )
+        assert response.status_code == expected_status
