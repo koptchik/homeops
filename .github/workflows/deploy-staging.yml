@@ -42,6 +42,10 @@ jobs:
         run: |
           docker run --rm homeops-test:${{ github.sha }}
 
+      - name: Audit dependencies in container
+        run: |
+          docker run --rm homeops-test:${{ github.sha }} python -m pip_audit
+
       - name: Cleanup test image
         if: always()
         run: |
