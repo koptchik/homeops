@@ -33,6 +33,10 @@ jobs:
       - name: Build test image
         run: |
           docker build -f Dockerfile.test -t homeops-test:${{ github.sha }} .
+      
+      - name: Run Ruff in container
+        run: |
+          docker run --rm homeops-test:${{ github.sha }} python -m ruff check backend
 
       - name: Run tests in container
         run: |
