@@ -14,13 +14,13 @@ def test_create_service():
         },
         {
             "name": "test",
-            "url": "http://exemple.com:1234",
+            "url": "http://exemple.com:1234"
         },
         {
-            "name": "test",
+            "name": "test"
         },
         {
-            "url": "http://exemple.com:1234",
+            "url": "http://exemple.com:1234"
         }
     ]
     for myjson in jsons:
@@ -29,18 +29,20 @@ def test_create_service():
             json=myjson,
             )
         data = response.json()
-        if ("name" and "url") in myjson:
+        if "name" in myjson and "url" in myjson:
             assert response.status_code == 200
             assert data["name"] == "test"
             assert data["url"].startswith("http://exemple.com:1234")
+            if "check_interval" in myjson:
+                assert data["check_interval"] == 75
+            else:
+                assert data["check_interval"] == 60
+            assert "id" in data
         else:
             assert response.status_code == 422
+            missing_field =  "name" if "name" not in myjson else "url"
+            assert any(error["loc"] == ["body", missing_field] for error in data["detail"])
 
-        if "check_interval" in myjson:
-            assert data["check_interval"] == 75
-        else:
-            assert data["check_interval"] == 60
-        assert "id" in data
 
 def test_get_services():
     response = client.post(
