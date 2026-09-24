@@ -100,7 +100,7 @@ def test_service_name_lenht():
                 "check_interval": 60
             }
         )
-        if lenght in range(2,50):
+        if 2 <= lenght <= 50:
             assert response.status_code == 200
         else:
             assert response.status_code == 422
@@ -116,14 +116,14 @@ def test_service_check_interval():
                 "check_interval": interval
             }
         )
-        if interval in range(10,3600):
+        if 10 <= interval <= 3600:
             assert response.status_code == 200
         else:
             assert response.status_code == 422
 
 def test_service_url():
-    urls = ["http://exemple.com:1234","exemple com"]
-    for url in urls:
+    case = [("http://exemple.com:1234", 200),("exemple com", 422)]
+    for url, expected_status in case:
         response = client.post(
             "/services",
             json={
@@ -132,7 +132,4 @@ def test_service_url():
                 "check_interval": 60
             }
         )
-        if url is HttpUrl:
-            assert response.status_code == 200
-        else:
-            assert response.status_code == 422
+        assert response.status_code == expected_status
