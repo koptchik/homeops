@@ -6,20 +6,31 @@ client = TestClient(app)
 
 
 def test_create_service():
-    response = client.post(
-        "/services",
-        json={
+    jsons=[
+        {
             "name": "test",
             "url": "http://exemple.com:1234",
             "check_interval": 75
+        },
+        {
+            "name": "test",
+            "url": "http://exemple.com:1234", 
         }
-    )
-    data = response.json()
-    assert response.status_code == 200
-    assert data["name"] == "test"
-    assert data["url"].startswith("http://exemple.com:1234")
-    assert data["check_interval"] == 75
-    assert "id" in data
+    ]
+    for myjson in jsons:
+        response = client.post(
+            "/services",
+            json=myjson,
+            )
+        data = response.json()
+        assert response.status_code == 200
+        assert data["name"] == "test"
+        assert data["url"].startswith("http://exemple.com:1234")
+        if "check_interval" in myjson:
+            assert data["check_interval"] == 75
+        else:
+            assert data["check_interval"] == 60
+        assert "id" in data
 
 def test_get_services():
     response = client.post(
