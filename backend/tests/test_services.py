@@ -1,6 +1,5 @@
 from fastapi.testclient import TestClient
 from backend.app.main import app
-from pydantic import BaseModel,HttpUrl,ValidationError
 
 
 client = TestClient(app)
@@ -88,10 +87,7 @@ def test_delete_service_999999():
 def test_service_name_lenht():
     lenghts = [1,2,50,51]
     for lenght in lenghts:
-        original_string = "test"
-        random_chars = str(abs(hash(original_string))) * 4
-        result = random_chars[:lenght]
-
+        result = "a" * lenght
         response = client.post(
             "/services",
             json={
