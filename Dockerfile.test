@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt requirements-dev.txt ./
 
-RUN python -m pip install --upgrade pip \
+RUN python -m pip install --upgrade pip  setuptools==83.0.0\
     && python -m pip install -r requirements-dev.txt
 
 COPY backend ./backend
