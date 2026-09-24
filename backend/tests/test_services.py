@@ -153,7 +153,7 @@ def test_service_url():
         )
         assert response.status_code == expected_status
 
-def test_service_lifecycle():
+def test_service_lifecicle():
     created = client.post(
         "/services",
         json={
@@ -161,20 +161,21 @@ def test_service_lifecycle():
             "url": "http://exemple.com:1234"
         }
     )
-    created_id = created.json()["id"]
     assert created.status_code == 200
+    created_id = created.json()["id"]
     assert created.json()["name"] == "test"
-    assert created.json()["url"] == "http://exemple.com:1234"
+    assert created.json()["url"] == "http://exemple.com:1234/"
     geted = client.get(f"/services/{created_id}")
     assert geted.status_code == 200
     assert geted.json()["name"] == "test"
-    assert geted.json()["url"] == "http://exemple.com:1234"
+    assert geted.json()["url"] == "http://exemple.com:1234/"
     deleted = client.delete(f"/services/{created_id}")
     assert deleted.status_code == 200
     assert deleted.json() == created.json()
     not_found = client.get(f"/services/{created_id}")
     assert not_found.status_code == 404
-    checked_delete = client.get("/sevices")
-    assert created_id not in [item["id"] for item in checked_delete["body"]]
+    checked_delete = client.get("/services/")
+    assert geted.status_code == 200
+    assert created_id not in [item["id"] for item in checked_delete.json()]
 
         
