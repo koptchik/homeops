@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, HttpUrl
 
+
 class ServiceCreate(BaseModel):
     name: str = Field(
         ...,
