@@ -14,7 +14,7 @@ def test_create_service():
         },
         {
             "name": "test",
-            "url": "http://exemple.com:1234" 
+            "url": "http://exemple.com:1234", 
         }
     ]
     for myjson in jsons:
@@ -26,7 +26,7 @@ def test_create_service():
         assert response.status_code == 200
         assert data["name"] == "test"
         assert data["url"].startswith("http://exemple.com:1234")
-        if response.json["check_interval"]:
+        if "check_interval" in myjson:
             assert data["check_interval"] == 75
         else:
             assert data["check_interval"] == 60
